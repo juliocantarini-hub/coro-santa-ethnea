@@ -189,12 +189,15 @@ function AvisoForm({ aviso, onGuardar, onCancelar }) {
   const [errorGlobal, setErrorGlobal] = useState('')
 
   useEffect(() => {
-    const coro = getCoroActual()
-    if (!coro) return
-    supabase.from('obras').select('id, titulo').eq('coro_id', coro.id).eq('publicada', true).order('titulo')
-      .then(({ data }) => setObras(data || []))
-    supabase.from('eventos').select('id, titulo').eq('coro_id', coro.id).eq('publicado', true).order('fecha_inicio', { ascending: false })
-      .then(({ data }) => setEventos(data || []))
+    async function cargarOpciones() {
+      const coro = await getCoroActual()
+      if (!coro) return
+      supabase.from('obras').select('id, titulo').eq('coro_id', coro.id).eq('publicada', true).order('titulo')
+        .then(({ data }) => setObras(data || []))
+      supabase.from('eventos').select('id, titulo').eq('coro_id', coro.id).eq('publicado', true).order('fecha_inicio', { ascending: false })
+        .then(({ data }) => setEventos(data || []))
+    }
+    cargarOpciones()
   }, [])
 
   function set(campo) { return e => setForm(f => ({ ...f, [campo]: e.target.value })) }
