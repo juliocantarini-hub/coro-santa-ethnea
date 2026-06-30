@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import { supabase } from '../../lib/supabase'
-import { usePushSubscription } from '../../hooks/usePushSubscription'
 
 function useEsMovil() {
   const [esMovil, setEsMovil] = useState(window.innerWidth <= 768)
@@ -29,25 +27,12 @@ export default function AppLayout({ children }) {
     location.pathname.startsWith('/admin')
   )
   const [zoom, setZoom] = useState(getZoom)
-  const [user, setUser] = useState(null)
 
   useEffect(() => {
     const fn = () => setZoom(getZoom())
     window.addEventListener('tamanoFuenteCambiado', fn)
     return () => window.removeEventListener('tamanoFuenteCambiado', fn)
   }, [])
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
-    })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-    return () => listener.subscription.unsubscribe()
-  }, [])
-
-  usePushSubscription(user)
 
   function toggleAdmin(valor) {
     setSeccionAdmin(valor)

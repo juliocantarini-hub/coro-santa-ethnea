@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useObrasAdmin, publicarObra, eliminarObra } from '../../hooks/useObras'
+import { supabase } from '../../lib/supabase'
+import { getCoroActual } from '../../lib/coro'
 
 const BADGE = {
   estudio:   { bg: '#E1F5EE', color: '#04342C', txt: 'En estudio' },
@@ -10,6 +12,18 @@ const BADGE = {
 }
 
 const ORDEN_ESTADO = { concierto: 0, estudio: 1, activo: 2, archivado: 3 }
+
+async function enviarNotificacionObra(titulo) {
+  try {
+    const coro = await getCoroActual()
+    if (!coro) return
+    await supabase.functions.invoke('enviar-notificaciones', {
+      body: { coro_id: coro.id, titulo: `Nueva obra: ${titulo}`, cuerpo: 'Ya está disponible en el repertorio' }
+    })
+  } catch (err) {
+    console.error('Error al enviar notificación:', err)
+  }
+}
 
 function contarMateriales(obra) {
   const tienePartitura = !!obra.drive_partitura_id ? 1 : 0
@@ -48,6 +62,9 @@ export default function ObrasLista() {
   async function togglePublicar(obra) {
     setProcesando(obra.id)
     await publicarObra(obra.id, !obra.publicada)
+    if (!obra.publicada) {
+      await enviarNotificacionObra(obra.titulo)
+    }
     await recargar()
     setProcesando(null)
   }
